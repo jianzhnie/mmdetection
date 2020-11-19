@@ -1,0 +1,6 @@
+cython
+scipy
+scikit-image
+tensorboard
+jupyterlab
+cloudpickle
