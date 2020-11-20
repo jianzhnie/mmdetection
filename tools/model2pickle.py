@@ -2,7 +2,7 @@
 import cloudpickle as pickle
 from mmdet.apis import init_detector
 import warnings
-
+import cv2
 import matplotlib.pyplot as plt
 import mmcv
 import numpy as np
@@ -138,12 +138,13 @@ import json
 
 
 def model_infer(pickle_file, img_bytes):
-	img = Image.open(io.BytesIO(img_bytes))
-	inputImg = np.asarray(img)
-	infer_model = pickle_load(pickle_file)
-	print(infer_model.model.CLASSES)
-	result = infer_model.predict(infer_model.model, inputImg)
-	print(result)
+    # img = Image.open(io.BytesIO(img_bytes))
+    # inputImg = np.asarray(img)
+    img_np_arr = np.frombuffer(img_bytes, np.uint8)
+    image = cv2.imdecode(img_np_arr, cv2.IMREAD_COLOR)
+    infer_model = pickle_load(pickle_file)
+    print(infer_model.model.CLASSES)
+    result = infer_model.predict(infer_model.model, image)
 
 
 def writeLabels(CLASSES, label_file):
@@ -157,7 +158,7 @@ def writeLabels(CLASSES, label_file):
 if __name__ == '__main__':
 	# dump model
 	config_file = 'configs_my/faster_rcnn_r50_fpn_1x.py'
-	checkpoint_file = 'work_dir/epoch_12.pth'
+	checkpoint_file = 'work_dir/epoch_11.pth'
 	output_file = 'work_dir/export_model.pkl'
 	label_file = 'work_dir/class_names.json'
 	dump_infer_model(checkpoint_file, config_file, output_file, label_file)
