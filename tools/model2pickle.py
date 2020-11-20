@@ -21,7 +21,6 @@ class InferenceModel:
 		self.model = model
 		self.predict = predict
 
-
 class LoadImage(object):
 
     def __call__(self, results):
@@ -59,15 +58,16 @@ def custom_inference_detector(model, img):
 
     # forward the model
     with torch.no_grad():
-        result = model(return_loss=False, rescale=True, **data)[0]
+        result = model(return_loss=False, rescale=True, **data)
 
+    print(result)
     if isinstance(result, tuple):
         bbox_result, segm_result = result
         if isinstance(segm_result, tuple):
             segm_result = segm_result[0]  # ms rcnn
     else:
         bbox_result, segm_result = result, None
-        
+    
     # Process detection mask
     if len(bbox_result ) < 1:
         output_dict = {}
@@ -115,17 +115,15 @@ def save_image(data):
 	return imgname
 
 
-def dump_infer_model(checkpoint_file, config_file, output_file, labelfile, target='det',
+def dump_infer_model(checkpoint_file, config_file, output_file, labelfile,
                      device='cuda:0'):
 	print("------------------------------")
 	print("START EXPORT MODEL")
 	print("------------------------------")
-	if target == 'det':
-		model = init_detector(config=config_file, checkpoint=checkpoint_file, device=device)
-		infer_model = InferenceModel(model, custom_inference_detector)
+	model = init_detector(config=config_file, checkpoint=checkpoint_file, device=device)
+	infer_model = InferenceModel(model, custom_inference_detector)
 	pickle_dump(infer_model, output_file)
 	writeLabels(infer_model.model.CLASSES, labelfile)
-	# model_infer(output_file)
 	print("------------------------------")
 	print("SUCCESS EXPORT MODEL")
 	print("------------------------------")
@@ -143,7 +141,6 @@ def model_infer(pickle_file, img_bytes):
 	infer_model = pickle_load(pickle_file)
 	print(infer_model.model.CLASSES)
 	result = infer_model.predict(infer_model.model, inputImg)
-	print(pickle_file)
 	print(result)
 
 
@@ -152,16 +149,16 @@ def writeLabels(CLASSES, label_file):
 	with open(label_file, 'w') as jsonfile:
 		for key, value in enumerate(CLASSES, start=1):
 			data.append({"id": int(key), "display_name": value})
-			json.dump(data, jsonfile)
+		json.dump(data, jsonfile)
 
 
 if __name__ == '__main__':
 	# dump model
-	config_file = 'myconfig/faster_rcnn_r50_fpn_1x.py'
-	checkpoint_file = 'work_dir/latest.pth'
+	config_file = 'configs_my/faster_rcnn_r50_fpn_1x.py'
+	checkpoint_file = 'work_dir/epoch_12.pth'
 	output_file = 'work_dir/export_model.pkl'
 	label_file = 'work_dir/class_names.json'
-	dump_infer_model(checkpoint_file, config_file, output_file, label_file, target='det')
-	img_file = 'demo/11.jpg'
+	dump_infer_model(checkpoint_file, config_file, output_file, label_file)
+	img_file = 'demo/0.jpg'
 	img_bytes = open(img_file, 'rb').read()
 	model_infer("work_dir/export_model.pkl", img_bytes)
