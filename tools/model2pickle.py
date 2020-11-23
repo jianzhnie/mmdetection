@@ -1,4 +1,5 @@
 # Import the required modules
+import argparse
 import cloudpickle as pickle
 from mmdet.apis import init_detector
 import warnings
@@ -9,10 +10,20 @@ import numpy as np
 import torch
 from mmcv.parallel import collate, scatter
 from mmcv.runner import load_checkpoint
-
 from mmdet.core import get_classes
 from mmdet.datasets.pipelines import Compose
 from mmdet.models import build_detector
+
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description='convert model to pickle')
+    parser.add_argument('--config', help='test config file path')
+    parser.add_argument('--checkpoint', help='checkpoint file')
+    parser.add_argument('--images_path', default='/home/robin/datatsets/xray', help='the dataset dir')
+    parser.add_argument('--output_dir', default='./work_dir', help='the dir to save models')
+    args = parser.parse_args()
+    return args
 
 
 class InferenceModel:
@@ -156,12 +167,16 @@ def writeLabels(CLASSES, label_file):
 
 
 if __name__ == '__main__':
-	# dump model
-	config_file = 'configs_my/faster_rcnn_r50_fpn_1x.py'
-	checkpoint_file = 'work_dir/epoch_11.pth'
-	output_file = 'work_dir/export_model.pkl'
-	label_file = 'work_dir/class_names.json'
-	dump_infer_model(checkpoint_file, config_file, output_file, label_file)
-	img_file = 'demo/0.jpg'
-	img_bytes = open(img_file, 'rb').read()
-	model_infer("work_dir/export_model.pkl", img_bytes)
+    """
+    python tools/model2pickle.py --config configs_my/faster_rcnn_r50_fpn_1x.py \
+            --checkpoint work_dir/epoch_11.pth \
+            --images_path demo/xray/0.jpg  \
+            --output_dir work_dir/ 
+    """
+    args = parse_args()
+    output_file = os.path.join(args.output_dir, 'export_model.pkl')
+    label_file =  os.path.join(args.output_dir, 'class_names.json')
+    dump_infer_model(args.checkpoint, args.config, output_file, label_file)
+    img_file = args.images_path
+    img_bytes = open(img_file, 'rb').read()
+    model_infer(output_file, img_bytes)
